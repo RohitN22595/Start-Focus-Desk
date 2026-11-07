@@ -4,15 +4,15 @@
 
 **A personal study dashboard for Windows**
 
-Live webcam preview · Eye openness score · Audio alerts · Session timer
+Live webcam preview · Eye openness score · Audio alerts · Session timer · Session log
 
-[Watch the demo](#demo) · [Get started](#quick-start) · [Change the sounds](#change-the-alert-sounds) · [Our products](#our-products) · [Troubleshooting](#troubleshooting)
+[Watch the demo](#demo) · [Get started](#quick-start) · [Calibrate the eye alert](#calibrate-the-eye-alert) · [Change the sounds](#change-the-alert-sounds) · [Troubleshooting](#troubleshooting)
 
 </div>
 
 ---
 
-Focus Desk brings your camera preview, study session timer, and distraction alerts into a charcoal and mint dashboard. It checks for closed eyes, a hidden face, and phones visible to the camera.
+Focus Desk brings your camera preview, study session timer, and distraction alerts into a charcoal and mint dashboard. It checks for closed eyes, a hidden face, and phones visible to the camera. Everything runs on your own PC: no video is recorded, uploaded, or sent anywhere.
 
 ## Demo
 
@@ -28,19 +28,12 @@ See the dashboard and alert sounds in action. Click the preview or [open the ful
 | Eye openness score | A live reading of how wide your eye is open |
 | Visual and audio alerts | Warnings for closed eyes, a missing face, and a visible phone |
 | Session timer | Time elapsed since monitoring started |
+| Live focus score | The percent of the session so far with no alerts, plus alert counts, right on the dashboard |
+| Session log and summary | Alert counts, average eye score, and focus score for every run, saved to `sessions/sessions.csv` and printed when you exit |
+| Personal calibration | A short `--calibrate` run that measures your eyes and sets your own threshold |
 | Custom sounds | Three replaceable MP3 clips for the different alerts |
 
-The dashboard shows a live **Eye Openness Score** when it can see your face. Higher scores indicate a wider eye opening. A score below 11 for about 0.6 seconds triggers the eyes-closed alert. The score is based on eye landmarks and has no fixed maximum.
-
-## Our products
-
-Explore our coding, puzzle, and browser tools.
-
-| Product | Explore |
-| --- | --- |
-| **CodeSmash** | A coding platform for DSA practice and interview preparation, with problem sets, quizzes, mock online assessments, and coding battles. [Visit CodeSmash](https://codesmash.in/) |
-| **MyLnkly · Queens** | A logic puzzle website with Queens boards, daily challenges, online battles, and private matches with friends. [Play at MyLnkly](https://mylnkly.in/) |
-| **Codeforces extension** | Our Chrome extension for Codeforces users. View its features and installation details on the store page. [Open the Chrome Web Store](https://chromewebstore.google.com/detail/begidbnffjelhnjckgpelbgfeaiiadhp) |
+The dashboard shows a live **Eye Openness Score** when it can see your face. Higher scores indicate a wider eye opening. A score below the threshold for about 0.6 seconds triggers the eyes-closed alert. The score is based on eye landmarks and has no fixed maximum.
 
 ---
 
@@ -77,10 +70,33 @@ If the version check shows an unsupported Python version, install Python 3.13 an
 
 | Package | Used for |
 | --- | --- |
-| `opencv-python` and `opencv-contrib-python` | Opening the webcam, processing frames, and drawing the dashboard |
+| `opencv-contrib-python` | Opening the webcam, processing frames, and drawing the dashboard |
 | `mediapipe` | Finding face and eye landmarks |
 | `ultralytics` | Detecting phones with the included YOLO model |
 | `pygame-ce` | Playing the MP3 alerts |
+
+## Calibrate the eye alert
+
+Everyone's eyes are different, so the eyes-closed alert works best with a threshold measured for you.
+
+1. From the project folder in Command Prompt, run `"Start Focus Desk.cmd" --calibrate` (or `.venv\Scripts\python.exe app.py --calibrate` after manual setup).
+2. Look at the camera normally, eyes open and relaxed, for about five seconds. Add a number to calibrate longer, for example `--calibrate 10`.
+3. Focus Desk prints your average score, saves a personal threshold to `settings.txt`, and uses it every time you start.
+
+Delete `settings.txt` to go back to the default threshold of 11. You can also tune any run from Command Prompt without editing files:
+
+| Option | What it changes | Default |
+| --- | --- | --- |
+| `--eye-threshold N` | Eye score below this counts as closed eyes | 11, or your calibration |
+| `--hidden-seconds N` | Face out of view this long triggers the alert | 0.7 |
+| `--closed-seconds N` | Eyes closed this long triggers the alert | 0.6 |
+| `--phone-conf N` | Confidence needed for phone detection | 0.5 |
+| `--phone-every N` | Run phone detection every Nth frame to save CPU | 3 |
+| `--no-log` | Do not save this session to the session log | logging on |
+
+## Session log
+
+Each run is appended to `sessions/sessions.csv` with the end time, duration, alert counts and seconds per alert, your average eye score, and a focus score: the percent of the session with no alert active. A summary prints in the terminal when you exit, and the dashboard shows the live focus score and alert counts while you study. Use `--no-log` to skip one session, and delete the file to start fresh.
 
 ## Change the alert sounds
 
@@ -109,15 +125,19 @@ If you used manual setup, run `.venv\Scripts\python.exe app.py --test-sound phon
 - **Package installation fails.** Check your internet connection and Python version. Keep the terminal open so you can read the installation error.
 - **The camera does not open.** Close other apps using it and check camera permissions in Windows Settings. If you have a second webcam, run `"Start Focus Desk.cmd" --camera 1` from Command Prompt.
 - **There is no sound.** Check the Windows output device and volume, then try a sound test above. Check that the replacement is an MP3 and that Windows has not added a second extension such as `.mp3.mp3`.
+- **The eyes-closed alert fires too often or never fires.** Run `"Start Focus Desk.cmd" --calibrate` so the threshold matches your eyes, or set one directly with `--eye-threshold`.
+- **Focus Desk feels slow or the fan is loud.** Raise `--phone-every` (for example `--phone-every 5`) so phone detection runs less often.
 
 ## Project files
 
 ```text
 Focus Desk/
-├── app.py                    Application and dashboard
+├── app.py                    Application, dashboard, and session log
 ├── Start Focus Desk.cmd      Windows launcher and first-run setup
 ├── requirements.txt          Python dependencies
 ├── README.md                 Setup and usage guide
+├── settings.txt              Your calibrated thresholds (created by --calibrate)
+├── sessions/sessions.csv     Session log (created on your first run)
 └── assets/
     ├── alarm.mp3             Eyes-closed alert
     ├── faudio.mp3            Face-out-of-view alert
@@ -126,7 +146,17 @@ Focus Desk/
     └── yolov8n.pt            Object detection model
 ```
 
-Focus Desk processes webcam frames on your computer and displays them live.
+Focus Desk processes webcam frames on your computer and displays them live. No video is recorded or uploaded.
+
+## Our products
+
+Explore our coding, puzzle, and browser tools.
+
+| Product | Explore |
+| --- | --- |
+| **CodeSmash** | A coding platform for DSA practice and interview preparation, with problem sets, quizzes, mock online assessments, and coding battles. [Visit CodeSmash](https://codesmash.in/) |
+| **MyLnkly · Queens** | A logic puzzle website with Queens boards, daily challenges, online battles, and private matches with friends. [Play at MyLnkly](https://mylnkly.in/) |
+| **Codeforces extension** | Our Chrome extension for Codeforces users. View its features and installation details on the store page. [Open the Chrome Web Store](https://chromewebstore.google.com/detail/begidbnffjelhnjckgpelbgfeaiiadhp) |
 
 ## License
 

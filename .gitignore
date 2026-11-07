@@ -2,3 +2,5 @@
 .venv/
 .yolo/
 __pycache__/
+settings.txt
+sessions/
